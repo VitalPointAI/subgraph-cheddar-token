@@ -15,8 +15,8 @@ dataSources:
       language: wasm/assemblyscript
       file: receipts/receipts.wasm
       entities:
-        - Account
         - WithdrawCrop
+        - MintCallback
         - TokenCallback
         - ClosedAccount
         - Unstake

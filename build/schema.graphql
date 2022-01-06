@@ -1,52 +1,94 @@
-type Account @entity {
-  id: ID!
-  signerId: String!
-  withdrawCrops: [WithdrawCrop!]!
-  tokenCallbacks: [TokenCallback!]!
-  closedAccounts: [ClosedAccount!]!
-  unstakes: [Unstake!]!
-}
-
 type WithdrawCrop @entity {
   id: ID!
-  output: String
-  action: String
-  amount: BigInt
   blockTime: BigInt
   blockHeight: BigInt
   blockHash: String
+  predecessorId: String
   receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+}
+
+type MintCallback @entity {
+  id: ID!
+  blockTime: BigInt
+  blockHeight: BigInt
+  blockHash: String
+  predecessorId: String
+  receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+  user: String
+  amount: BigInt
   memo: String
 }
 
 type TokenCallback @entity {
   id: ID!
-  output: String
-  amount: BigInt
   blockTime: BigInt
   blockHeight: BigInt
   blockHash: String
+  predecessorId: String
   receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+  amount: BigInt
+  user: String
   memo: String
 }
 
 type ClosedAccount @entity {
   id: ID!
-  output: String
-  blockTime: BigInt
-  blockHeight: BigInt
-  blockHash: String
-  receiverId: String
-  memo: String
-}
-
-type Unstake @entity {
-  id: ID!
-  output: String
   blockTime: BigInt
   blockHeight: BigInt
   blockHash: String
   predecessorId: String
-  balance: BigInt
-  memo: String
+  receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+}
+
+type Unstake @entity {
+  id: ID!
+  blockTime: BigInt
+  blockHeight: BigInt
+  blockHash: String
+  predecessorId: String
+  receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+  action: String
+  account: String
+  token: String
+  amount: BigInt
 }

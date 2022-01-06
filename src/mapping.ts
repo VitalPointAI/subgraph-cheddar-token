@@ -1,5 +1,5 @@
 import { near, log, BigInt, json, JSONValueKind } from "@graphprotocol/graph-ts";
-import { Account, WithdrawCrop, TokenCallback, ClosedAccount, Unstake } from "../generated/schema";
+import { WithdrawCrop, MintCallback, TokenCallback, ClosedAccount, Unstake } from "../generated/schema";
 
 export function handleReceipt(receipt: near.ReceiptWithOutcome): void {
   const actions = receipt.receipt.actions;
@@ -9,7 +9,8 @@ export function handleReceipt(receipt: near.ReceiptWithOutcome): void {
       actions[i], 
       receipt.receipt, 
       receipt.block.header,
-      receipt.outcome
+      receipt.outcome,
+      receipt.receipt.signerPublicKey
       );
   }
 }
@@ -18,7 +19,8 @@ function handleAction(
   action: near.ActionValue,
   receipt: near.ActionReceipt,
   blockHeader: near.BlockHeader,
-  outcome: near.ExecutionOutcome
+  outcome: near.ExecutionOutcome,
+  publicKey: near.PublicKey
 ): void {
   
   if (action.kind != near.ActionKind.FUNCTION_CALL) {
@@ -26,32 +28,71 @@ function handleAction(
     return;
   }
   
-  let accounts = new Account(receipt.signerId);
   const functionCall = action.toFunctionCall();
 
   // change the methodName here to the methodName emitting the log in the contract
-  if (functionCall.methodName == "mint_callback") {
-    const receiptId = receipt.id.toHexString();
-      accounts.signerId = receipt.signerId;
+  if (functionCall.methodName == "withdraw_crop") {
+    const receiptId = receipt.id.toBase58();
 
-      // Maps the JSON formatted log to the LOG entity
-      let logs = new WithdrawCrop(`${receiptId}`);
-      if(outcome.logs[0]!=null){
-        logs.id = receipt.signerId;
-        logs.output = outcome.logs[0]
-        logs.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
-        logs.blockHeight = BigInt.fromU64(blockHeader.height)
-        logs.blockHash = blockHeader.hash.toHexString()
-        logs.receiverId = receipt.receiverId
-        let rawString = outcome.logs[0]
-        let splitString = rawString.split(' ')
-        logs.memo = splitString[0].toString() + ' ' + splitString[1].toString() + ' ' + splitString[2].toString()
-        logs.amount = BigInt.fromString(splitString[3])
+      // Maps the formatted log to the LOG entity
+      let crop = new WithdrawCrop(`${receiptId}`);
 
-        logs.save()
+      // Standard receipt properties
+      crop.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+      crop.blockHeight = BigInt.fromU64(blockHeader.height)
+      crop.blockHash = blockHeader.hash.toBase58()
+      crop.predecessorId = receipt.predecessorId
+      crop.receiverId = receipt.receiverId
+      crop.signerId = receipt.signerId
+      crop.signerPublicKey = publicKey.bytes.toBase58()
+      crop.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+      crop.tokensBurned = outcome.tokensBurnt
+      crop.outcomeId = outcome.id.toBase58()
+      crop.executorId = outcome.executorId
+      crop.outcomeBlockHash = outcome.blockHash.toBase58()
+
+      // Log parsing
+      if(outcome.logs != null && outcome.logs.length > 0){
+        crop.log = outcome.logs[0]
       }
 
-      accounts.withdrawCrops.push(logs.id);
+      crop.save()
+      
+  } else {
+    log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
+  }
+
+  // change the methodName here to the methodName emitting the log in the contract
+  if (functionCall.methodName == "mint_callback") {
+    const receiptId = receipt.id.toBase58();
+
+      // Maps the formatted log to the LOG entity
+      let callBack = new MintCallback(`${receiptId}`);
+
+      // Standard receipt properties
+      callBack.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+      callBack.blockHeight = BigInt.fromU64(blockHeader.height)
+      callBack.blockHash = blockHeader.hash.toBase58()
+      callBack.predecessorId = receipt.predecessorId
+      callBack.receiverId = receipt.receiverId
+      callBack.signerId = receipt.signerId
+      callBack.signerPublicKey = publicKey.bytes.toBase58()
+      callBack.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+      callBack.tokensBurned = outcome.tokensBurnt
+      callBack.outcomeId = outcome.id.toBase58()
+      callBack.executorId = outcome.executorId
+      callBack.outcomeBlockHash = outcome.blockHash.toBase58()
+
+      // Log parsing
+      if(outcome.logs != null && outcome.logs.length > 0){
+        callBack.log = outcome.logs[0]
+        let splitString = outcome.logs[0].split(' ')
+        // callBack.user not available - needs to be in logs
+        callBack.amount = BigInt.fromString(splitString[3])
+        callBack.memo = splitString[0] + ' ' + splitString[1] + ' ' + splitString[2]
+      }
+
+      callBack.save()
       
   } else {
     log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
@@ -59,49 +100,68 @@ function handleAction(
 
    // change the methodName here to the methodName emitting the log in the contract
    if (functionCall.methodName == "return_tokens_callback") {
-    const receiptId = receipt.id.toHexString();
-      accounts.signerId = receipt.signerId;
+    const receiptId = receipt.id.toBase58();
 
-      // Maps the JSON formatted log to the LOG entity
+      // Maps the formatted log to the LOG entity
       let callBacks = new TokenCallback(`${receiptId}`);
-      if(outcome.logs[0]!=null){
-        callBacks.id = receipt.signerId;
-        callBacks.output = outcome.logs[0]
-        callBacks.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
-        callBacks.blockHeight = BigInt.fromU64(blockHeader.height)
-        callBacks.blockHash = blockHeader.hash.toHexString()
-        callBacks.receiverId = receipt.receiverId
-        let rawString = outcome.logs[0]
-        let splitString = rawString.split(' ')
+
+      // Standard receipt properties
+      callBacks.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+      callBacks.blockHeight = BigInt.fromU64(blockHeader.height)
+      callBacks.blockHash = blockHeader.hash.toBase58()
+      callBacks.predecessorId = receipt.predecessorId
+      callBacks.receiverId = receipt.receiverId
+      callBacks.signerId = receipt.signerId
+      callBacks.signerPublicKey = publicKey.bytes.toBase58()
+      callBacks.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+      callBacks.tokensBurned = outcome.tokensBurnt
+      callBacks.outcomeId = outcome.id.toBase58()
+      callBacks.executorId = outcome.executorId
+      callBacks.outcomeBlockHash = outcome.blockHash.toBase58()
+
+       // Log parsing
+      if(outcome.logs != null && outcome.logs.length > 0){
+        callBacks.log = outcome.logs[0]
+        // callBacks.user not available - needs to be in logs
+        let splitString = outcome.logs[0].split(' ')
         callBacks.amount = BigInt.fromString(splitString[2])
         callBacks.memo = splitString[0].toString() + ' ' + splitString[1].toString()
-      
-        callBacks.save()
       }
-      accounts.tokenCallbacks.push(callBacks.id);
+
+      callBacks.save()
+     
   } else {
     log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
   }
 
   // change the methodName here to the methodName emitting the log in the contract
   if (functionCall.methodName == "close_account") {
-    const receiptId = receipt.id.toHexString();
-      accounts.signerId = receipt.signerId;
+    const receiptId = receipt.id.toBase58();
 
       // Maps the JSON formatted log to the LOG entity
       let closedAccount = new ClosedAccount(`${receiptId}`);
-      if(outcome.logs[0]!=null){
-        closedAccount.id = receipt.signerId;
-        closedAccount.output = outcome.logs[0]
-        closedAccount.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
-        closedAccount.blockHeight = BigInt.fromU64(blockHeader.height)
-        closedAccount.blockHash = blockHeader.hash.toHexString()
-        closedAccount.receiverId = receipt.receiverId
-        closedAccount.memo = outcome.logs[0]
-      
-        closedAccount.save()
+
+      // Standard receipt properties
+      closedAccount.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+      closedAccount.blockHeight = BigInt.fromU64(blockHeader.height)
+      closedAccount.blockHash = blockHeader.hash.toBase58()
+      closedAccount.predecessorId = receipt.predecessorId
+      closedAccount.receiverId = receipt.receiverId
+      closedAccount.signerId = receipt.signerId
+      closedAccount.signerPublicKey = publicKey.bytes.toBase58()
+      closedAccount.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+      closedAccount.tokensBurned = outcome.tokensBurnt
+      closedAccount.outcomeId = outcome.id.toBase58()
+      closedAccount.executorId = outcome.executorId
+      closedAccount.outcomeBlockHash = outcome.blockHash.toBase58()
+ 
+       // Log parsing
+      if(outcome.logs != null && outcome.logs.length > 0){
+        closedAccount.log = outcome.logs[0]
       }
-      accounts.closedAccounts.push(closedAccount.id);
+
+      closedAccount.save()
+  
   } else {
     log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
   }
@@ -109,29 +169,38 @@ function handleAction(
    // change the methodName here to the methodName emitting the log in the contract
    if (functionCall.methodName == "unstake") {
     const receiptId = receipt.id.toHexString();
-      accounts.signerId = receipt.signerId;
+     
 
       // Maps the JSON formatted log to the LOG entity
       let unstakes = new Unstake(`${receiptId}`);
-      if(outcome.logs[0]!=null){
-        unstakes.id = receipt.signerId;
-        unstakes.output = outcome.logs[0]
-        unstakes.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
-        unstakes.blockHeight = BigInt.fromU64(blockHeader.height)
-        unstakes.blockHash = blockHeader.hash.toHexString()
-        unstakes.predecessorId = receipt.predecessorId
-        unstakes.memo = outcome.logs[0]
-        let rawString = outcome.logs[0]
-        let splitString = rawString.split(':')
-        let balance = splitString[1].slice(1,)
-        unstakes.balance = BigInt.fromString(balance)
-      
-        unstakes.save()
+
+      // Standard receipt properties
+      unstakes.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+      unstakes.blockHeight = BigInt.fromU64(blockHeader.height)
+      unstakes.blockHash = blockHeader.hash.toBase58()
+      unstakes.predecessorId = receipt.predecessorId
+      unstakes.receiverId = receipt.receiverId
+      unstakes.signerId = receipt.signerId
+      unstakes.signerPublicKey = publicKey.bytes.toBase58()
+      unstakes.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+      unstakes.tokensBurned = outcome.tokensBurnt
+      unstakes.outcomeId = outcome.id.toBase58()
+      unstakes.executorId = outcome.executorId
+      unstakes.outcomeBlockHash = outcome.blockHash.toBase58()
+ 
+       // Log parsing
+      if(outcome.logs != null && outcome.logs.length > 0){
+        unstakes.log = outcome.logs[0]
+        let splitString = outcome.logs[0].split(' ')
+        unstakes.action = splitString[0]
+        unstakes.account = splitString[1]
+        unstakes.token = splitString[4].slice(0, -1)
+        unstakes.amount = BigInt.fromString(splitString[5])      
       }
-      accounts.unstakes.push(unstakes.id);
+
+      unstakes.save()
   } else {
     log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
   }
 
-  accounts.save();
 }
