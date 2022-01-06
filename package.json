@@ -1,13 +1,13 @@
 {
-  "name": "cheddar-subgraph",
+  "name": "cheddar-p2-subgraph",
   "author": "Aaron Luhning",
   "version": "0.1.0",
-  "repository": "",
+  "repository": "https://github.com/VitalPointAI/subgraph-cheddar-token.git",
   "license": "MIT",
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy aluhning/cheddar --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/"
+    "deploy": "graph deploy aluhning/cheddar-p2 --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/"
   },
   "devDependencies": {
     "@graphprotocol/graph-cli": "0.25.1",

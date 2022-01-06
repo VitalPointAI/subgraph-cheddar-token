@@ -1,8 +1,10 @@
 type Account @entity {
   id: ID!
   signerId: String!
-  withdrawCrop: [WithdrawCrop!]!
-  transfers: [Transfer!]!
+  withdrawCrops: [WithdrawCrop!]!
+  tokenCallbacks: [TokenCallback!]!
+  closedAccounts: [ClosedAccount!]!
+  unstakes: [Unstake!]!
 }
 
 type WithdrawCrop @entity {
@@ -13,42 +15,38 @@ type WithdrawCrop @entity {
   blockTime: BigInt
   blockHeight: BigInt
   blockHash: String
-  token: String
   receiverId: String
   memo: String
 }
-type Transfer @entity {
+
+type TokenCallback @entity {
   id: ID!
   output: String
-  action: String
   amount: BigInt
-  transferFrom: String
-  transferTo: String
-  memo: String
   blockTime: BigInt
   blockHeight: BigInt
   blockHash: String
+  receiverId: String
+  memo: String
 }
-# type Swap @entity {
-#   id: ID!
-#   output: String
-#   action: String
-#   blocktime: BigInt
-#   firstTokenAmount: BigInt
-#   firstToken: String
-#   secondTokenAmount: BigInt
-#   secondToken: String
-# }
 
-# type AddLiquidity @entity {
-#   id: ID!
-#   output: String
-#   blocktime: BigInt
-#   functionCalled: String
-#   functionAction: String
-#   firstPoolAmount: BigInt
-#   firstPool: String
-#   secondPoolAmount: BigInt
-#   secondPool: String
-#   sharesMinted: BigInt
-# }
+type ClosedAccount @entity {
+  id: ID!
+  output: String
+  blockTime: BigInt
+  blockHeight: BigInt
+  blockHash: String
+  receiverId: String
+  memo: String
+}
+
+type Unstake @entity {
+  id: ID!
+  output: String
+  blockTime: BigInt
+  blockHeight: BigInt
+  blockHash: String
+  predecessorId: String
+  balance: BigInt
+  memo: String
+}

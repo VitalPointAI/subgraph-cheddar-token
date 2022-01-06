@@ -17,8 +17,10 @@ export class Account extends Entity {
     this.set("id", Value.fromString(id));
 
     this.set("signerId", Value.fromString(""));
-    this.set("withdrawCrop", Value.fromStringArray(new Array(0)));
-    this.set("transfers", Value.fromStringArray(new Array(0)));
+    this.set("withdrawCrops", Value.fromStringArray(new Array(0)));
+    this.set("tokenCallbacks", Value.fromStringArray(new Array(0)));
+    this.set("closedAccounts", Value.fromStringArray(new Array(0)));
+    this.set("unstakes", Value.fromStringArray(new Array(0)));
   }
 
   save(): void {
@@ -56,22 +58,40 @@ export class Account extends Entity {
     this.set("signerId", Value.fromString(value));
   }
 
-  get withdrawCrop(): Array<string> {
-    let value = this.get("withdrawCrop");
+  get withdrawCrops(): Array<string> {
+    let value = this.get("withdrawCrops");
     return value!.toStringArray();
   }
 
-  set withdrawCrop(value: Array<string>) {
-    this.set("withdrawCrop", Value.fromStringArray(value));
+  set withdrawCrops(value: Array<string>) {
+    this.set("withdrawCrops", Value.fromStringArray(value));
   }
 
-  get transfers(): Array<string> {
-    let value = this.get("transfers");
+  get tokenCallbacks(): Array<string> {
+    let value = this.get("tokenCallbacks");
     return value!.toStringArray();
   }
 
-  set transfers(value: Array<string>) {
-    this.set("transfers", Value.fromStringArray(value));
+  set tokenCallbacks(value: Array<string>) {
+    this.set("tokenCallbacks", Value.fromStringArray(value));
+  }
+
+  get closedAccounts(): Array<string> {
+    let value = this.get("closedAccounts");
+    return value!.toStringArray();
+  }
+
+  set closedAccounts(value: Array<string>) {
+    this.set("closedAccounts", Value.fromStringArray(value));
+  }
+
+  get unstakes(): Array<string> {
+    let value = this.get("unstakes");
+    return value!.toStringArray();
+  }
+
+  set unstakes(value: Array<string>) {
+    this.set("unstakes", Value.fromStringArray(value));
   }
 }
 
@@ -209,23 +229,6 @@ export class WithdrawCrop extends Entity {
     }
   }
 
-  get token(): string | null {
-    let value = this.get("token");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toString();
-    }
-  }
-
-  set token(value: string | null) {
-    if (!value) {
-      this.unset("token");
-    } else {
-      this.set("token", Value.fromString(<string>value));
-    }
-  }
-
   get receiverId(): string | null {
     let value = this.get("receiverId");
     if (!value || value.kind == ValueKind.NULL) {
@@ -261,7 +264,7 @@ export class WithdrawCrop extends Entity {
   }
 }
 
-export class Transfer extends Entity {
+export class TokenCallback extends Entity {
   constructor(id: string) {
     super();
     this.set("id", Value.fromString(id));
@@ -269,19 +272,19 @@ export class Transfer extends Entity {
 
   save(): void {
     let id = this.get("id");
-    assert(id != null, "Cannot save Transfer entity without an ID");
+    assert(id != null, "Cannot save TokenCallback entity without an ID");
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        "Cannot save Transfer entity with non-string ID. " +
+        "Cannot save TokenCallback entity with non-string ID. " +
           'Considering using .toHex() to convert the "id" to a string.'
       );
-      store.set("Transfer", id.toString(), this);
+      store.set("TokenCallback", id.toString(), this);
     }
   }
 
-  static load(id: string): Transfer | null {
-    return changetype<Transfer | null>(store.get("Transfer", id));
+  static load(id: string): TokenCallback | null {
+    return changetype<TokenCallback | null>(store.get("TokenCallback", id));
   }
 
   get id(): string {
@@ -310,23 +313,6 @@ export class Transfer extends Entity {
     }
   }
 
-  get action(): string | null {
-    let value = this.get("action");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toString();
-    }
-  }
-
-  set action(value: string | null) {
-    if (!value) {
-      this.unset("action");
-    } else {
-      this.set("action", Value.fromString(<string>value));
-    }
-  }
-
   get amount(): BigInt | null {
     let value = this.get("amount");
     if (!value || value.kind == ValueKind.NULL) {
@@ -341,57 +327,6 @@ export class Transfer extends Entity {
       this.unset("amount");
     } else {
       this.set("amount", Value.fromBigInt(<BigInt>value));
-    }
-  }
-
-  get transferFrom(): string | null {
-    let value = this.get("transferFrom");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toString();
-    }
-  }
-
-  set transferFrom(value: string | null) {
-    if (!value) {
-      this.unset("transferFrom");
-    } else {
-      this.set("transferFrom", Value.fromString(<string>value));
-    }
-  }
-
-  get transferTo(): string | null {
-    let value = this.get("transferTo");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toString();
-    }
-  }
-
-  set transferTo(value: string | null) {
-    if (!value) {
-      this.unset("transferTo");
-    } else {
-      this.set("transferTo", Value.fromString(<string>value));
-    }
-  }
-
-  get memo(): string | null {
-    let value = this.get("memo");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toString();
-    }
-  }
-
-  set memo(value: string | null) {
-    if (!value) {
-      this.unset("memo");
-    } else {
-      this.set("memo", Value.fromString(<string>value));
     }
   }
 
@@ -443,6 +378,327 @@ export class Transfer extends Entity {
       this.unset("blockHash");
     } else {
       this.set("blockHash", Value.fromString(<string>value));
+    }
+  }
+
+  get receiverId(): string | null {
+    let value = this.get("receiverId");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set receiverId(value: string | null) {
+    if (!value) {
+      this.unset("receiverId");
+    } else {
+      this.set("receiverId", Value.fromString(<string>value));
+    }
+  }
+
+  get memo(): string | null {
+    let value = this.get("memo");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set memo(value: string | null) {
+    if (!value) {
+      this.unset("memo");
+    } else {
+      this.set("memo", Value.fromString(<string>value));
+    }
+  }
+}
+
+export class ClosedAccount extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id != null, "Cannot save ClosedAccount entity without an ID");
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save ClosedAccount entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("ClosedAccount", id.toString(), this);
+    }
+  }
+
+  static load(id: string): ClosedAccount | null {
+    return changetype<ClosedAccount | null>(store.get("ClosedAccount", id));
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get output(): string | null {
+    let value = this.get("output");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set output(value: string | null) {
+    if (!value) {
+      this.unset("output");
+    } else {
+      this.set("output", Value.fromString(<string>value));
+    }
+  }
+
+  get blockTime(): BigInt | null {
+    let value = this.get("blockTime");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set blockTime(value: BigInt | null) {
+    if (!value) {
+      this.unset("blockTime");
+    } else {
+      this.set("blockTime", Value.fromBigInt(<BigInt>value));
+    }
+  }
+
+  get blockHeight(): BigInt | null {
+    let value = this.get("blockHeight");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set blockHeight(value: BigInt | null) {
+    if (!value) {
+      this.unset("blockHeight");
+    } else {
+      this.set("blockHeight", Value.fromBigInt(<BigInt>value));
+    }
+  }
+
+  get blockHash(): string | null {
+    let value = this.get("blockHash");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set blockHash(value: string | null) {
+    if (!value) {
+      this.unset("blockHash");
+    } else {
+      this.set("blockHash", Value.fromString(<string>value));
+    }
+  }
+
+  get receiverId(): string | null {
+    let value = this.get("receiverId");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set receiverId(value: string | null) {
+    if (!value) {
+      this.unset("receiverId");
+    } else {
+      this.set("receiverId", Value.fromString(<string>value));
+    }
+  }
+
+  get memo(): string | null {
+    let value = this.get("memo");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set memo(value: string | null) {
+    if (!value) {
+      this.unset("memo");
+    } else {
+      this.set("memo", Value.fromString(<string>value));
+    }
+  }
+}
+
+export class Unstake extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id != null, "Cannot save Unstake entity without an ID");
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save Unstake entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("Unstake", id.toString(), this);
+    }
+  }
+
+  static load(id: string): Unstake | null {
+    return changetype<Unstake | null>(store.get("Unstake", id));
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get output(): string | null {
+    let value = this.get("output");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set output(value: string | null) {
+    if (!value) {
+      this.unset("output");
+    } else {
+      this.set("output", Value.fromString(<string>value));
+    }
+  }
+
+  get blockTime(): BigInt | null {
+    let value = this.get("blockTime");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set blockTime(value: BigInt | null) {
+    if (!value) {
+      this.unset("blockTime");
+    } else {
+      this.set("blockTime", Value.fromBigInt(<BigInt>value));
+    }
+  }
+
+  get blockHeight(): BigInt | null {
+    let value = this.get("blockHeight");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set blockHeight(value: BigInt | null) {
+    if (!value) {
+      this.unset("blockHeight");
+    } else {
+      this.set("blockHeight", Value.fromBigInt(<BigInt>value));
+    }
+  }
+
+  get blockHash(): string | null {
+    let value = this.get("blockHash");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set blockHash(value: string | null) {
+    if (!value) {
+      this.unset("blockHash");
+    } else {
+      this.set("blockHash", Value.fromString(<string>value));
+    }
+  }
+
+  get predecessorId(): string | null {
+    let value = this.get("predecessorId");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set predecessorId(value: string | null) {
+    if (!value) {
+      this.unset("predecessorId");
+    } else {
+      this.set("predecessorId", Value.fromString(<string>value));
+    }
+  }
+
+  get balance(): BigInt | null {
+    let value = this.get("balance");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set balance(value: BigInt | null) {
+    if (!value) {
+      this.unset("balance");
+    } else {
+      this.set("balance", Value.fromBigInt(<BigInt>value));
+    }
+  }
+
+  get memo(): string | null {
+    let value = this.get("memo");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set memo(value: string | null) {
+    if (!value) {
+      this.unset("memo");
+    } else {
+      this.set("memo", Value.fromString(<string>value));
     }
   }
 }

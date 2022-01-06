@@ -1,6 +1,6 @@
 specVersion: 0.0.4
-description: Ref Finance # the name of the subgraph
-repository: https://github.com/VitalPointAI/near-subgraph-template.git # repo where subgraph project is stored
+description: Cheddar P2 # the name of the subgraph
+repository: https://github.com/VitalPointAI/subgraph-cheddar-token.git # repo where subgraph project is stored
 schema:
   file: ./schema.graphql
 dataSources:
@@ -8,8 +8,8 @@ dataSources:
     name: receipts # could also be blocks
     network: near-mainnet # currently only near-mainnet is available
     source:
-      account: token.cheddar.near # contract account you want to pull data from
-      startBlock: 53986186 # starting block on near-mainnet for indexing
+      account: p2-ref.cheddar.near # contract account you want to pull data from
+      startBlock: 56055810 # starting block on near-mainnet for indexing
     mapping:
       apiVersion: 0.0.5
       language: wasm/assemblyscript
@@ -17,6 +17,8 @@ dataSources:
       entities:
         - Account # the example entity in the schema.graphql file
         - WithdrawCrop
-        - Transfer
+        - TokenCallback
+        - ClosedAccount
+        - Unstake
       receiptHandlers:
         - handler: handleReceipt # name of the receipt handler
